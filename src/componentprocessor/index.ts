@@ -66,6 +66,10 @@ export class ComponentDefinition {
             return Promise.reject(this);
         }
     }
+
+    public get extends(): string {
+        return this.xmlNode ? this.xmlNode.attr.extends : "";
+    }
 }
 
 export async function getComponentDefinitionMap(rootDir: string) {

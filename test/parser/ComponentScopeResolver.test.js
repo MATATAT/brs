@@ -30,7 +30,7 @@ describe("ComponentScopeResolver", () => {
     });
 
     test("resolving function scope across two components", async () => {
-        jest.setTimeout(60000);
+        jest.setTimeout(60000); // TODO: Remove timeout
         let parseFn = LexerParser.getLexerParserFn(new Map(), defaultExecutionOptions);
 
         let componentMap = await getComponentDefinitionMap("/doesnt/matter");
@@ -45,6 +45,8 @@ describe("ComponentScopeResolver", () => {
         let componentScopeResolver = new brs.parser.ComponentScopeResolver(componentMap, parseFn);
         let statements = await componentScopeResolver.resolve(componentToResolve);
         expect(statements).toBeDefined();
-        expect(statements.length).toBeGreaterThan(1);
+        expect(statements.length).toBe(2);
+        // TODO: test that function names are correct and that the test fn has the
+        // right number of statements
     });
 });

@@ -32,7 +32,7 @@ export class ComponentScopeResolver {
     private flatten(statementMap: Stmt.Statement[][]): Stmt.Statement[] {
         let statements = statementMap.shift() || [];
         let statementMemo = new Set(
-            statements.filter((_): _ is Stmt.Function => true).map(statement => statement.name)
+            statements.filter((_): _ is Stmt.Function => true).map(statement => statement.name.text)
         );
         while (statementMap.length > 0) {
             let extendedFns = statementMap.shift() || [];
@@ -40,11 +40,11 @@ export class ComponentScopeResolver {
                 extendedFns
                     .filter((_): _ is Stmt.Function => true)
                     .filter(statement => {
-                        let haveFnName = statementMemo.has(statement.name);
+                        let haveFnName = statementMemo.has(statement.name.text);
                         if (!haveFnName) {
-                            statementMemo.add(statement.name);
+                            statementMemo.add(statement.name.text);
                         }
-                        return haveFnName;
+                        return !haveFnName;
                     })
             );
         }

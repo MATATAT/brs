@@ -24,18 +24,20 @@ export class RoAssociativeArray extends BrsComponent implements BrsValue, BrsIte
             this.elements.set(member.name.value.toLowerCase(), member.value)
         );
 
-        this.registerMethods([
-            this.clear,
-            this.delete,
-            this.addreplace,
-            this.count,
-            this.doesexist,
-            this.append,
-            this.keys,
-            this.items,
-            this.lookup,
-            this.isEmpty,
-        ]);
+        this.registerMethods({
+            ifAssociativeArray: [
+                this.clear,
+                this.delete,
+                this.addreplace,
+                this.count,
+                this.doesexist,
+                this.append,
+                this.keys,
+                this.items,
+                this.lookup,
+            ],
+            ifEnum: [this.isEmpty],
+        });
     }
 
     toString(parent?: BrsType): string {
@@ -203,7 +205,20 @@ export class RoAssociativeArray extends BrsComponent implements BrsValue, BrsIte
             returns: ValueKind.Object,
         },
         impl: (interpreter: Interpreter) => {
-            return new RoArray(this.getValues());
+            return new RoArray(
+                this.getElements().map((key: BrsString) => {
+                    return new RoAssociativeArray([
+                        {
+                            name: new BrsString("key"),
+                            value: key,
+                        },
+                        {
+                            name: new BrsString("value"),
+                            value: this.get(key),
+                        },
+                    ]);
+                })
+            );
         },
     });
 

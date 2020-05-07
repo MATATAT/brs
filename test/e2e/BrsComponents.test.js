@@ -55,6 +55,10 @@ describe("end to end brightscript functions", () => {
             "true",
             "can check for existence: ",
             "true",
+            "items() example key: ",
+            "bar",
+            "items() example value: ",
+            "5",
             "can empty itself: ",
             "true",
         ]);
@@ -139,6 +143,10 @@ describe("end to end brightscript functions", () => {
             "hello",
             "field3 in node now is: ",
             "false",
+            "field3 present? ",
+            "true",
+            "fieldほ present? ",
+            "false",
             "callback 1 called",
             "callback 2 called",
             "field 3 updated",
@@ -219,6 +227,12 @@ describe("end to end brightscript functions", () => {
             "false",
             "Node subtype is returned:",
             "Node",
+            "updatedId",
+            "invalid",
+            "updatedId",
+            "newValue",
+            "updatedId",
+            "invalid",
         ]);
     });
 
@@ -263,6 +277,8 @@ describe("end to end brightscript functions", () => {
 
         expect(allArgs(outputStreams.stderr.write)).toEqual([]);
         expect(allArgs(outputStreams.stdout.write).filter(arg => arg !== "\n")).toEqual([
+            "bar",
+            "bar",
             "true", // comparison
             "5", // length
             "b", // split("/")[1]
@@ -344,6 +360,18 @@ describe("end to end brightscript functions", () => {
             "789.012",
             "Integer to string ",
             "23",
+        ]);
+    });
+
+    test("components/roInvalid.brs", async () => {
+        await execute([resourceFile("components", "roInvalid.brs")], outputStreams);
+
+        expect(allArgs(outputStreams.stderr.write)).toEqual([]);
+        expect(allArgs(outputStreams.stdout.write).filter(arg => arg !== "\n")).toEqual([
+            "roInvalid",
+            "<Component: roInvalid>",
+            "invalid",
+            "true",
         ]);
     });
 });

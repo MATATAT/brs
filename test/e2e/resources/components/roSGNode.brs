@@ -35,6 +35,9 @@ sub main()
     print "field1 in node now is: " node1.getField("field1")      ' => hello
     print "field3 in node now is: " node1.getField("field3")      ' => false
 
+    print "field3 present? " node1.hasField("field3")
+    print "fieldほ present? " node1.hasField("fieldほ")
+
     node1.observeField("field1", "onCB1Called")
     node1.observeField("field1", "onCB2Called")
     node1.observeField("field2", "onField2Cb") ' This doesn't get called since field was removed
@@ -181,6 +184,36 @@ sub main()
 
     ' returns the node subtype
     print "Node subtype is returned:" n.subtype()                       ' => Node
+
+    ' calling update function without optional createFields parameter doesn't add new fields
+    node = createObject("roSGNode", "Node")
+    node.id = "originalId"
+    node.update({
+        id: "updatedId",
+        newField: "newValue"
+    })
+    print node.id
+    print node.newField
+
+    ' calling update function with optional createFields parameter set to true adds new fields
+    node = createObject("roSGNode", "Node")
+    node.id = "originalId"
+    node.update({
+        id: "updatedId",
+        newField: "newValue"
+    }, true)
+    print node.id
+    print node.newField
+
+    ' calling update function with optional createFields parameter set to false doesn't add new fields
+    node = createObject("roSGNode", "Node")
+    node.id = "originalId"
+    node.update({
+        id: "updatedId",
+        newField: "newValue"
+    }, false)
+    print node.id
+    print node.newField
 end sub
 
 sub onCB1Called()

@@ -91,53 +91,51 @@ export class RoSGNode extends BrsComponent implements BrsValue, BrsIterable {
             this.fields.set(member.name.value.toLowerCase(), new Field(member.value, false))
         );
 
-        this.registerMethods([
-            // ifAssociativeArray methods
-            this.clear,
-            this.delete,
-            this.addreplace,
-            this.count,
-            this.doesexist,
-            this.append,
-            this.keys,
-            this.items,
-            this.lookup,
-            //ifSGNodeField methods
-            this.addfield,
-            this.addfields,
-            this.getfield,
-            this.observefield,
-            this.removefield,
-            this.setfield,
-            this.setfields,
-            this.update,
-            // ifSGNodeChildren methods
-            this.appendchild,
-            this.getchildcount,
-            this.getchildren,
-            this.removechild,
-            this.getparent,
-            this.createchild,
-            this.replacechild,
-            this.removechildren,
-            this.appendchildren,
-            this.getchild,
-            this.insertchild,
-            this.removechildrenindex,
-            this.removechildindex,
-            this.reparent,
-            this.createchildren,
-            this.replacechildren,
-            this.insertchildren,
-            // ifSGNodeFocus methods
-            this.hasfocus,
-            this.setfocus,
-            this.isinfocuschain,
-            //ifSGNodeDict
-            this.findnode,
-            this.issamenode,
-            this.subtype,
-        ]);
+        this.registerMethods({
+            ifAssociativeArray: [
+                this.clear,
+                this.delete,
+                this.addreplace,
+                this.count,
+                this.doesexist,
+                this.append,
+                this.keys,
+                this.items,
+                this.lookup,
+            ],
+            ifSGNodeField: [
+                this.addfield,
+                this.addfields,
+                this.getfield,
+                this.hasfield,
+                this.observefield,
+                this.removefield,
+                this.setfield,
+                this.setfields,
+                this.update,
+            ],
+            ifSGNodeChildren: [
+                this.appendchild,
+                this.getchildcount,
+                this.getchildren,
+                this.removechild,
+                this.getparent,
+                this.createchild,
+                this.replacechild,
+                this.removechildren,
+                this.appendchildren,
+                this.getchild,
+                this.insertchild,
+                this.removechildrenindex,
+                this.removechildindex,
+                this.reparent,
+                this.createchildren,
+                this.replacechildren,
+                this.insertchildren,
+            ],
+            ifSGNodeFocus: [this.hasfocus, this.setfocus, this.isinfocuschain],
+            ifSGNodeDict: [this.findnode, this.issamenode, this.subtype],
+        });
     }
 
     toString(parent?: BrsType): string {
@@ -501,6 +499,19 @@ export class RoSGNode extends BrsComponent implements BrsValue, BrsIterable {
         },
     });
 
+    /** Returns true if the field exists */
+    private hasfield = new Callable("hasfield", {
+        signature: {
+            args: [new StdlibArgument("fieldname", ValueKind.String)],
+            returns: ValueKind.Boolean,
+        },
+        impl: (interpreter: Interpreter, fieldname: BrsString) => {
+            return this.fields.has(fieldname.value.toLowerCase())
+                ? BrsBoolean.True
+                : BrsBoolean.False;
+        },
+    });
+
     /** Registers a callback to be executed when the value of the field changes */
     private observefield = new Callable("observefield", {
         signature: {
@@ -582,17 +593,20 @@ export class RoSGNode extends BrsComponent implements BrsValue, BrsIterable {
     In contrast to setFields method, update always return Uninitialized */
     private update = new Callable("update", {
         signature: {
-            args: [new StdlibArgument("aa", ValueKind.Object)],
+            args: [
+                new StdlibArgument("aa", ValueKind.Object),
+                new StdlibArgument("createFields", ValueKind.Boolean, BrsBoolean.False),
+            ],
             returns: ValueKind.Uninitialized,
         },
-        impl: (interpreter: Interpreter, aa: RoAssociativeArray) => {
+        impl: (interpreter: Interpreter, aa: RoAssociativeArray, createFields: BrsBoolean) => {
             if (!(aa instanceof RoAssociativeArray)) {
                 return Uninitialized.Instance;
             }
 
             aa.getValue().forEach((value, key) => {
                 let fieldName = new BrsString(key);
-                if (this.fields.has(key)) {
+                if (this.fields.has(key) || createFields.toBoolean()) {
                     this.set(fieldName, value);
                 }
             });
@@ -1095,6 +1109,8 @@ export function createNodeByType(interpreter: Interpreter, type: BrsString) {
             }
 
             interpreter.inSubEnv(subInterpreter => {
+                let mPointer = subInterpreter.environment.getM();
+                mPointer.set(new BrsString("top"), node);
                 if (init instanceof Callable) {
                     init.call(subInterpreter);
                 }
@@ -1113,7 +1129,7 @@ function addFields(interpreter: Interpreter, node: RoSGNode, typeDef: ComponentD
     for (let [key, value] of Object.entries(fields)) {
         if (value instanceof Object) {
             let addField = node.getMethod("addField");
-            let setField = node.getMethod("setFIeld");
+            let setField = node.getMethod("setField");
             const fieldName = new BrsString(key);
             if (addField) {
                 addField.call(

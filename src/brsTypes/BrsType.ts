@@ -4,9 +4,11 @@ import { RoString } from "./components/RoString";
 import { Int32 } from "./Int32";
 import { Float } from "./Float";
 import { roBoolean } from "./components/RoBoolean";
+import { roInvalid } from "./components/RoInvalid";
 
 /** Set of values supported in BrightScript. */
 export enum ValueKind {
+    Interface,
     Invalid,
     Boolean,
     String,
@@ -28,6 +30,8 @@ export namespace ValueKind {
      */
     export function toString(kind: ValueKind): string {
         switch (kind) {
+            case ValueKind.Interface:
+                return "Interface";
             case ValueKind.Invalid:
                 return "Invalid";
             case ValueKind.Boolean:
@@ -62,6 +66,8 @@ export namespace ValueKind {
      */
     export function fromString(kind: string): ValueKind | undefined {
         switch (kind.toLowerCase()) {
+            case "interface":
+                return ValueKind.Interface;
             case "invalid":
                 return ValueKind.Invalid;
             case "boolean":
@@ -294,7 +300,7 @@ export class BrsBoolean implements BrsValue, Comparable, Boxable {
 }
 
 /** Internal representation of the BrightScript `invalid` value. */
-export class BrsInvalid implements BrsValue, Comparable {
+export class BrsInvalid implements BrsValue, Comparable, Boxable {
     readonly kind = ValueKind.Invalid;
     static Instance = new BrsInvalid();
 
@@ -319,6 +325,10 @@ export class BrsInvalid implements BrsValue, Comparable {
 
     toString(parent?: BrsType) {
         return "invalid";
+    }
+
+    box() {
+        return new roInvalid();
     }
 }
 

@@ -38,7 +38,6 @@ import MemoryFileSystem from "memory-fs";
 import { BrsComponent } from "../brsTypes/components/BrsComponent";
 import { isBoxable, isUnboxable } from "../brsTypes/Boxing";
 
-import { ManifestValue } from "../preprocessor/Manifest";
 import { ComponentDefinition } from "../componentprocessor";
 import pSettle from "p-settle";
 
@@ -123,7 +122,9 @@ export class Interpreter implements Expr.Visitor<BrsType>, Stmt.Visitor<BrsType>
                 );
                 let statements = await componentScopeResolver.resolve(component);
                 interpreter.inSubEnv(subInterpreter => {
-                    subInterpreter.environment.setM(interpreter.environment.getM());
+                    let componentMPointer = new RoAssociativeArray([]);
+                    subInterpreter.environment.setM(componentMPointer);
+                    subInterpreter.environment.setRootM(componentMPointer);
                     subInterpreter.exec(statements);
                     return BrsInvalid.Instance;
                 }, component.environment);
@@ -276,6 +277,11 @@ export class Interpreter implements Expr.Visitor<BrsType>, Stmt.Visitor<BrsType>
         });
 
         return this.evaluate(initVariable);
+    }
+
+    visitLibrary(statement: Stmt.Library): BrsInvalid {
+        this.stderr.write("WARNING: 'Library' statement implemented as no-op");
+        return BrsInvalid.Instance;
     }
 
     visitNamedFunction(statement: Stmt.Function): BrsType {
@@ -933,7 +939,7 @@ export class Interpreter implements Expr.Visitor<BrsType>, Stmt.Visitor<BrsType>
         // evaluate the function to call (it could be the result of another function call)
         const callee = this.evaluate(expression.callee);
         // evaluate all of the arguments as well (they could also be function calls)
-        const args = expression.args.map(this.evaluate, this);
+        let args = expression.args.map(this.evaluate, this);
 
         if (!isBrsCallable(callee)) {
             return this.addError(
@@ -951,6 +957,16 @@ export class Interpreter implements Expr.Visitor<BrsType>, Stmt.Visitor<BrsType>
         if (satisfiedSignature) {
             try {
                 let mPointer = this._environment.getRootM();
+
+                let signature = satisfiedSignature.signature;
+                args = args.map((arg, index) => {
+                    // any arguments of type "object" must be automatically boxed
+                    if (signature.args[index].type.kind === ValueKind.Object && isBoxable(arg)) {
+                        return arg.box();
+                    }
+
+                    return arg;
+                });
 
                 if (
                     expression.callee instanceof Expr.DottedGet ||
@@ -1005,6 +1021,14 @@ export class Interpreter implements Expr.Visitor<BrsType>, Stmt.Visitor<BrsType>
                             returnLocation
                         )
                     );
+                }
+
+                if (
+                    returnedValue &&
+                    isBoxable(returnedValue) &&
+                    satisfiedSignature.signature.returns === ValueKind.Object
+                ) {
+                    returnedValue = returnedValue.box();
                 }
 
                 if (
